@@ -99,7 +99,8 @@ ESP32-C3
 7. **填写信息** — 在网页中填写：
    - WiFi 名称（SSID）
    - WiFi 密码
-   - Server酱 SendKey（可选，用于微信推送）
+      - Server酱 SendKey（可选，用于微信推送）
+     > 💡 获取方式：访问 [sct.ftqq.com](https://sct.ftqq.com/)，用微信扫码注册，登录后在「Key & API」页面复制 SendKey
 8. **保存** — 点击保存，设备自动重启并连接 WiFi
 
 ### 第四步：验证连接
