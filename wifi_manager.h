@@ -158,23 +158,9 @@ void connectWiFi() {
         return;
     }
 
-    // 连接失败，启动 WiFiManager Portal 配网（阻塞，3 分钟超时）
-    Serial.println("[WiFi] Starting WiFiManager portal...");
-        wm.setConfigPortalTimeout(600);
-    wm.setAPCallback(configModeCallback);
-    wm.setSaveConfigCallback(saveConfigCallback);
-    preparePortal();
-    bool portalOk = wm.startConfigPortal("ESP32-Elec", "12345678");
-
-    if (portalOk) {
-        wifiConnected = true;
-        digitalWrite(PIN_LED, HIGH);
-        Serial.printf("[WiFi] Portal connected! IP: %s\n", WiFi.localIP().toString().c_str());
-        syncNTP();
-    } else {
-        wifiConnected = false;
-        Serial.println("[WiFi] Portal timeout, running offline...");
-    }
+    // 连接失败：静默离线，用户通过菜单 WiFi Setup 手动配网
+    wifiConnected = false;
+    Serial.println("[WiFi] No saved WiFi, running offline. Use menu to setup.");
     wifiLastReconnect = millis();
 }
 

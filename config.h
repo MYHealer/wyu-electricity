@@ -27,7 +27,7 @@
 // ==================== 默认值 ====================
 #define DEFAULT_BUILDING  46
 #define DEFAULT_ROOM      416
-#define SENDKEY           "SCT349139TAFAoWJ6XeNePyRaodTztUJCS"
+#define SENDKEY           "SCTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 // ==================== 菜单状态 ====================
 enum MenuState {
