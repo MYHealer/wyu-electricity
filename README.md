@@ -60,10 +60,9 @@ ESP32-C3
 
 ### 第一步：烧录固件
 
-1. 克隆本仓库到本地：
-   ```bash
-   git clone https://github.com/MYHealer/wyu-electricity.git
-   ```
+1. 下载本仓库到本地：
+   - 点击仓库页面绿色 **Code** 按钮 → **Download ZIP**
+   - 解压到任意目录
 2. 使用 Arduino IDE 打开项目：
    - 安装 [Arduino IDE](https://www.arduino.cc/en/software)
    - 安装 ESP32 开发板支持（Board Manager → esp32 by Espressif）
