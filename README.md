@@ -67,7 +67,7 @@ ESP32-C3
    - 安装 [Arduino IDE](https://www.arduino.cc/en/software)
    - 安装 ESP32 开发板支持（Board Manager → esp32 by Espressif）
    - 安装依赖库：`Adafruit_GFX`、`Adafruit_SH110X`、`ArduinoJson`
-3. 选择开发板：`ESP32-C3 SuperMini`
+3. 选择开发板：`ESP32-C3`
 4. 连接 ESP32-C3 到电脑 USB
 5. 点击"上传"烧录固件
 6. 烧录完成后自动重启
