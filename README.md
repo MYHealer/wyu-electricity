@@ -59,13 +59,20 @@ ESP32-C3
 
 ### 第一步：烧录固件
 
-1. 下载最新固件：[Releases](https://github.com/MYHealer/wyu-electricity/releases)
-2. 使用 [ESPWebTool](https://esphome.github.io/espweb/) 在线烧录（推荐）
-   - 连接 ESP32-C3 到电脑 USB
-   - 点击 "Connect" → 选择串口
-   - 选择固件 `.bin` 文件
-   - 点击 "Program" 等待烧录完成
-3. 烧录完成后自动重启
+1. 克隆本仓库到本地：
+   ```bash
+   git clone https://github.com/MYHealer/wyu-electricity.git
+   ```
+2. 使用 Arduino IDE 打开项目：
+   - 安装 [Arduino IDE](https://www.arduino.cc/en/software)
+   - 安装 ESP32 开发板支持（Board Manager → esp32 by Espressif）
+   - 安装依赖库：`Adafruit_GFX`、`Adafruit_SH110X`、`ArduinoJson`
+3. 选择开发板：`ESP32-C3 SuperMini`
+4. 连接 ESP32-C3 到电脑 USB
+5. 点击"上传"烧录固件
+6. 烧录完成后自动重启
+
+> 💡 **提示**：烧录完成后，后续更新可通过 OTA 无线升级，无需 USB 线。
 
 ### 第二步：首次开机
 
@@ -105,6 +112,16 @@ ESP32-C3
 ### 配网失败？
 
 如果配网失败（如密码错误），设备会自动重启并进入离线模式。重新进入 WiFi Setup 即可再次配网。
+
+### OTA 无线升级
+
+首次烧录后，后续固件更新无需 USB 线，通过 WiFi 无线升级：
+
+1. 设备需已连接 WiFi
+2. 进入菜单 → Settings → OTA Update
+3. 设备会开启 OTA 服务页面
+4. 浏览器访问设备 IP 地址，上传 `.bin` 固件文件
+5. 等待上传完成，设备自动重启
 
 ## 菜单操作
 
