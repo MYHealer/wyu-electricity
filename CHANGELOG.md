@@ -41,7 +41,7 @@
 ## v8.0
 
 ### 初始版本
-- ESP32-C3 SuperMini + SH1106 OLED
+- ESP32-C3 + SH1106 OLED
 - 旋转编码器菜单操作
 - 五邑大学电费 API 对接
 - Server酱微信推送

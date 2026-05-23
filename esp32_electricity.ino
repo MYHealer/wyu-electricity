@@ -1,13 +1,13 @@
 /*
- * 五邑大学宿舍电费查询终端 v8.0
- * ESP32-C3 SuperMini + SH1106 OLED(128x64 I2C) + 旋钮 + 按钮
- * Deep Sleep 省电：30秒无操作休眠，GPIO6/定时器唤醒
+ * 五邑大学宿舍电费查询终端 v9.1
+ * ESP32-C3 + SH1106 OLED(128x64 I2C) + 旋钮 + 按钮
+ * Deep Sleep 省电：30秒无操作休眠，GPIO3/定时器唤醒
  *
  * 接线：
  *   OLED SDA  → GPIO4    旋钮 A    → GPIO0
  *   OLED SCL  → GPIO5    旋钮 B    → GPIO1
- *   OLED VCC  → 3V3      旋钮 按下  → GPIO6
- *   OLED GND  → GND      CONFIRM   → GPIO3
+ *   OLED VCC  → 3V3      旋钮 确认  → GPIO6
+ *   OLED GND  → GND      唤醒/屏保 → GPIO3
  *                          BACK      → GPIO10
  *
  * 模块划分：
