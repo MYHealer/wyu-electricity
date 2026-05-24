@@ -153,8 +153,8 @@ int checkWakeReason() {
 // 定时器唤醒 = 到了 0 点，执行查询 + 推送（如果该天推送）
 void executeScheduledTasks() {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 100)) {
-        Serial.println("[Sleep] No time, skip scheduled tasks");
+    if (!getLocalTime(&timeinfo, 3000)) {
+        Serial.println("[Sleep] NTP not ready, skip scheduled tasks");
         return;
     }
 
@@ -162,9 +162,12 @@ void executeScheduledTasks() {
     int wday = timeinfo.tm_wday;  // 0=Sun
 
     // 查询任务：每次 0 点唤醒都执行
-    Serial.println("[Sleep] Executing scheduled query...");
-    queryElectricity();
-    delay(15000);  // 等查询连接完全关闭（HTTPS响应慢）
+        Serial.println("[Sleep] Executing scheduled query...");
+    bool queryResult = queryElectricity();
+    if (queryResult) {
+        saveQueryCache();  // 查询成功，更新缓存
+    }
+    delay(2000);  // 等连接释放
 
         // 推送任务：检查是否到了推送日
     // 只要配置开启且有有效余额（查询成功或缓存有效），就推送
@@ -180,9 +183,14 @@ void executeScheduledTasks() {
         }
 
         if (shouldPush) {
+            // 推送前检查 WiFi 是否还在
+            if (!wifiConnected) {
+                Serial.println("[Sleep] WiFi lost before push, reconnecting...");
+                tryConnectWiFi(15000);
+            }
             Serial.printf("[Sleep] Pushing! Day=%d Hour=%d Balance=%.2f\n", wday, hour, balance);
-            pushNotification();
-            delay(15000);  // 等推送连接完全关闭
+            bool pushResult = pushNotification();
+            Serial.printf("[Sleep] Push result: %d\n", pushResult);
         }
     } else {
         Serial.printf("[Sleep] Push skipped: enabled=%d balance=%.2f queryOk=%d\n",
