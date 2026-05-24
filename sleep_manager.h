@@ -27,8 +27,9 @@ RTC_DATA_ATTR unsigned long lastSleepMs = 0; // 上次 sleep 时的 millis
 // 查询和推送都在每日/每周 0 点触发，取两者较早的时间
 uint64_t calcNextEventSleepUs() {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 100)) {
+    if (!getLocalTime(&timeinfo, 3000)) {
         // 没有时间，sleep 5分钟后重试
+        Serial.println("[Sleep] NTP timeout, fallback 5min");
         return 300ULL * 1000000ULL;
     }
 
@@ -78,7 +79,13 @@ void enterDeepSleep() {
     Serial.println("[Sleep] Entering deep sleep...");
     Serial.flush();  // 等串口发完
 
-            // 关 OLED — 硬件关屏（0xAE = Display OFF）
+    // ===== 先算睡眠时间（需要 WiFi/NTP） =====
+    lastSleepMs = millis();
+    wakeCount++;
+    uint64_t sleepTimeUs = calcNextEventSleepUs();
+    Serial.printf("[Sleep] Sleep for %llu us\n", sleepTimeUs);
+
+    // 关 OLED — 硬件关屏（0xAE = Display OFF）
     display.clearDisplay();
     display.display();
     delay(50);
@@ -103,7 +110,7 @@ void enterDeepSleep() {
     digitalWrite(PIN_SCL, LOW);
     pinMode(PIN_LED, OUTPUT);
     digitalWrite(PIN_LED, HIGH);   // LED 低电平亮，HIGH=灭
-            pinMode(PIN_ENC_A, OUTPUT);
+    pinMode(PIN_ENC_A, OUTPUT);
     digitalWrite(PIN_ENC_A, LOW);
     pinMode(PIN_ENC_B, OUTPUT);
     digitalWrite(PIN_ENC_B, LOW);
@@ -111,13 +118,6 @@ void enterDeepSleep() {
     digitalWrite(PIN_ENC_BTN, LOW);
     pinMode(PIN_BTN_BACK, OUTPUT);
     digitalWrite(PIN_BTN_BACK, LOW);
-
-    // 记录状态到 RTC 内存
-    lastSleepMs = millis();
-    wakeCount++;
-
-    // 计算下次事件时间
-    uint64_t sleepTimeUs = calcNextEventSleepUs();
 
     // 配置唤醒源：GPIO3（BTN_OK）+ 定时器
     // ESP32-C3 deep sleep GPIO 唤醒只支持 GPIO 0-5
