@@ -1,5 +1,5 @@
 /*
- * 五邑大学宿舍电费查询终端 v9.2
+  * 五邑大学宿舍电费查询终端 v9.3
  * ESP32-C3 + SH1106 OLED(128x64 I2C) + 旋钮 + 按钮
  * Deep Sleep 省电：30秒无操作休眠，GPIO3/定时器唤醒
  *
@@ -34,10 +34,10 @@
 #include "globals.h"
 #include "config_store.h"
 #include "encoder.h"
+#include "sleep_manager.h"  // 先包含，定义 getCurrentTime/saveNTPTime
 #include "display.h"
 #include "api.h"
 #include "wifi_manager.h"
-#include "sleep_manager.h"
 
 #include "menu.h"
 
@@ -71,7 +71,7 @@ int screensaverPage = 0;
 // ==================== 菜单文本 ====================
 const char* txtMain[]     = {"Query", "Settings", "Push", "About"};
 const char* txtSet[]      = {"Building", "Room", "Default", "WiFi Setup", "Back"};
-const char* txtQry[]      = {"Current", "Frequency", "Hour", "Back"};
+const char* txtQry[]      = {"Current", "Frequency", "Back"};
 const char* txtPush[]     = {"Trigger", "Frequency", "Push Now", "Back"};
 const char* txtPushFreq[] = {"Daily", "Weekly"};
 const char* txtPushDay[]  = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
@@ -108,12 +108,19 @@ void initWiFiAndNTP() {
     loadConfig();
     Serial.printf("Room: %d-%d\n", config.building, config.room);
 
-    connectWiFi();
+        connectWiFiOnBoot();
 
-        if (wifiConnected) {
-        configTime(8 * 3600, 0, "ntp.aliyun.com", "pool.ntp.org");
+    if (wifiConnected) {
+        configTime(8 * 3600, 0, "ntp.aliyun.com", "cn.ntp.org.cn", "pool.ntp.org");
         struct tm ti;
-        getLocalTime(&ti, 3000);  // 等 NTP 同步完成
+        if (getLocalTime(&ti, 5000)) {
+            // 验证时间合理性（年份必须 >= 2025）
+            if (ti.tm_year + 1900 >= 2025) {
+                saveNTPTime();  // 保存到 RTC 内存，断网时可用
+            } else {
+                Serial.printf("[NTP] Invalid year: %d, sync failed\n", ti.tm_year + 1900);
+            }
+        }
         digitalWrite(PIN_LED, HIGH);  // 连上WiFi，关LED
     }
 }
@@ -157,9 +164,13 @@ void setup() {
             break;
         }
 
-                                        case WAKE_GPIO: {
-            // GPIO 唤醒：先显示缓存，再快速取 NTP 时间
-            Serial.println("v9.2 Button wake - cache + quick NTP");
+                                                                                                case WAKE_GPIO: {
+            // GPIO 唤醒：直接用软件 RTC 显示时间，不等 NTP
+            Serial.println("v9.2 Button wake - cache + local RTC");
+
+            // ★ deep sleep 后 configTime 丢失，必须重新设置时区
+            // 否则 localtime_r() 按 UTC 算，时间会少 8 小时
+            configTime(8 * 3600, 0, "ntp.aliyun.com", "cn.ntp.org.cn", "pool.ntp.org");
 
             loadConfig();
             loadQueryCache();
@@ -167,11 +178,7 @@ void setup() {
             screensaverActive = true;
             screensaverPage = 0;
             lastActivity = millis();
-            showScreensaver();
-
-            // 快速连 WiFi 取时间（~5秒），取完立刻关
-            quickNTPSync();
-            showScreensaver();  // 用取到的时间刷新显示
+            showScreensaver();  // 用软件 RTC 时间，秒亮
             break;
         }
 
@@ -204,7 +211,32 @@ void loop() {
     bool ok = readBtn(PIN_BTN_OK);
     bool back = readBtn(PIN_BTN_BACK);
 
-            // 检测 WiFi 刚连上：立即查询，查完关 WiFi
+                    // ★ 配网期间：检测按钮退出 + 检查配网状态
+        if (portalActive) {
+        if (back) {  // ★ 只有 BACK (IO10) 退出配网
+            stopWifiPortal();  // 停止配网
+            // 恢复显示
+            if (menuState == ST_SET) {
+                showCurrentMenu();
+            } else {
+                showScreensaver();
+            }
+        } else {
+            checkPortalStatus();  // 检查配网是否自动完成
+            if (!portalActive) {
+                // 配网自动完成，恢复显示
+                if (menuState == ST_SET) {
+                    showCurrentMenu();
+                } else {
+                    showScreensaver();
+                }
+            }
+        }
+        delay(10);
+        return;
+    }
+
+                        // 检测 WiFi 刚连上：立即查询，查完关 WiFi（配网期间跳过）
     if (wifiConnected && !wifiWasConnected) {
         Serial.println("[WiFi] Just connected, querying...");
         if (queryElectricity()) {

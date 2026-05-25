@@ -5,6 +5,21 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-ESP32--C3-orange.svg)
 
+## 更新日志
+
+### v9.3 (2026-05-25)
+- **WiFi 配网改为非阻塞模式** — 配网期间可随时按键退出，不再卡死
+- **OLED 显示配网信息** — 进入 WiFi Setup 后屏幕显示热点名称、密码、IP 地址
+- **软件 RTC 功能** — 断网时用 RTC 内存估算时间，屏保秒亮无需等 NTP
+- **修复 NTP 同步顺序** — 睡眠前先刷新时间再计算 sleep 时长，避免时间漂移
+- **修复配网界面闪退** — handleOk() 中 return 跳过 showCurrentMenu()，界面不再被覆盖
+
+### v9.2
+- 按需联网：默认不连 WiFi，查询/推送时短暂连网，完成后自动断开
+- Deep Sleep 省电：30 秒无操作自动休眠，休眠电流 ~9μA
+- 定时查询/推送：每日/每周自动执行
+- Web 配网 + 在线更新
+
 ## 功能
 
 - **电费查询** — 对接五邑大学电费 API，实时显示余额和用电量
@@ -148,8 +163,7 @@ ESP32-C3
 │   └── WiFi Setup     — 配置 WiFi + 在线更新
 ├── Query Timer
 │   ├── Enable         — 开启/关闭定时查询
-│   ├── Frequency      — 每日/每周
-│   └── Day            — 每周几（仅每周模式）
+│   └── Frequency      — 每日/每周
 ├── Push Settings
 │   ├── Enable         — 开启/关闭推送
 │   ├── Frequency      — 每日/每周

@@ -104,10 +104,10 @@ void showScreensaver() {
             display.setCursor(0, 36);
             display.print("No Data");
         }
-    } else {
+        } else {
         // 时间页面
         struct tm timeinfo;
-        if (getLocalTime(&timeinfo, 100)) {
+        if (getCurrentTime(&timeinfo)) {
             char dateBuf[20];
             snprintf(dateBuf, sizeof(dateBuf), "%04d-%02d-%02d",
                      timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);

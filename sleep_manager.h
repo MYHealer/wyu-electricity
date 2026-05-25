@@ -13,6 +13,12 @@
 #include "config.h"
 #include "esp_sleep.h"
 
+// 前向声明（定义在其他头文件）
+bool queryElectricity();
+bool tryConnectWiFi(unsigned long timeoutMs);
+bool pushNotification();
+void quickNTPSync();
+
 // ==================== RTC 内存（重启不丢失） ====================
 // 唤醒原因
 #define WAKE_NONE       0   // 上电复位（首次启动）
@@ -23,13 +29,56 @@ RTC_DATA_ATTR int wakeReason = WAKE_NONE;
 RTC_DATA_ATTR int wakeCount = 0;           // 累计唤醒次数
 RTC_DATA_ATTR unsigned long lastSleepMs = 0; // 上次 sleep 时的 millis
 
+// 软件 RTC：保存 NTP 同步的时间戳，用于断网时估算时间
+RTC_DATA_ATTR time_t savedUnixTime = 0;    // 上次 NTP 同步的 Unix 时间戳
+RTC_DATA_ATTR unsigned long long elapsedUs = 0; // 累计经过的微秒（sleep 期间 RTC 计数）
+
+// ==================== 保存 NTP 时间到 RTC 内存 ====================
+void saveNTPTime() {
+    struct tm timeinfo;
+    if (getLocalTime(&timeinfo, 3000)) {
+        // 验证时间合理性（年份必须 >= 2025）
+        if (timeinfo.tm_year + 1900 >= 2025) {
+            savedUnixTime = mktime(&timeinfo);
+            elapsedUs = 0;  // 重置累计值
+            Serial.printf("[RTC] Saved time: %ld\n", savedUnixTime);
+        } else {
+            Serial.printf("[RTC] Invalid year: %d, not saving\n", timeinfo.tm_year + 1900);
+        }
+    }
+}
+
+// ==================== 获取当前时间（优先 NTP，失败用软件 RTC） ====================
+bool getCurrentTime(struct tm *timeinfo) {
+    // 优先尝试 NTP（等待 3 秒）
+    if (getLocalTime(timeinfo, 3000)) {
+        // 验证时间合理性（年份必须 >= 2025）
+        if (timeinfo->tm_year + 1900 >= 2025) {
+            return true;
+        }
+        Serial.printf("[RTC] NTP invalid year: %d, using software RTC\n", timeinfo->tm_year + 1900);
+    }
+    
+    // NTP 失败，用软件 RTC 估算
+    if (savedUnixTime > 0) {
+        unsigned long long elapsedSec = elapsedUs / 1000000ULL;
+        time_t estimatedTime = savedUnixTime + elapsedSec;
+        localtime_r(&estimatedTime, timeinfo);
+        Serial.printf("[RTC] Estimated: %02d:%02d:%02d (elapsed=%llus)\n",
+            timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, elapsedSec);
+        return true;
+    }
+    
+    return false;
+}
+
 // ==================== 计算下次事件的 sleep 时间（微秒） ====================
 // 查询和推送都在每日/每周 0 点触发，取两者较早的时间
 uint64_t calcNextEventSleepUs() {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 3000)) {
+    if (!getCurrentTime(&timeinfo)) {
         // 没有时间，sleep 5分钟后重试
-        Serial.println("[Sleep] NTP timeout, fallback 5min");
+        Serial.println("[Sleep] No time available, fallback 5min");
         return 300ULL * 1000000ULL;
     }
 
@@ -79,9 +128,24 @@ void enterDeepSleep() {
     Serial.println("[Sleep] Entering deep sleep...");
     Serial.flush();  // 等串口发完
 
-    // ===== 先算睡眠时间（需要 WiFi/NTP） =====
     lastSleepMs = millis();
     wakeCount++;
+
+    // ★ 先刷新 NTP 时间，再算 sleep 时长
+    // 之前顺序反了：calcNextEventSleepUs() 用旧时间算出偏长的 sleep，
+    // 刷新后 savedUnixTime 变新，但 sleep 时长没重算，导致唤醒后时间快了
+    {
+        struct tm timeinfo;
+        if (getLocalTime(&timeinfo, 1000)) {
+            if (timeinfo.tm_year + 1900 >= 2025) {
+                savedUnixTime = mktime(&timeinfo);
+                elapsedUs = 0;
+                Serial.printf("[RTC] Refreshed before sleep: %ld\n", savedUnixTime);
+            }
+        }
+    }
+
+    // ===== 再算睡眠时间（基于刚刷新的 NTP 时间） =====
     uint64_t sleepTimeUs = calcNextEventSleepUs();
     Serial.printf("[Sleep] Sleep for %llu us\n", sleepTimeUs);
 
@@ -124,6 +188,10 @@ void enterDeepSleep() {
     esp_deep_sleep_enable_gpio_wakeup(BIT(GPIO_NUM_3), ESP_GPIO_WAKEUP_GPIO_LOW);
     esp_sleep_enable_timer_wakeup(sleepTimeUs);
 
+        // 累加 sleep 时长到软件 RTC
+    elapsedUs += sleepTimeUs;
+    Serial.printf("[Sleep] Sleeping %llu us, total elapsed: %llu us\n", sleepTimeUs, elapsedUs);
+
     // 进入深睡眠
     esp_deep_sleep_start();
 }
@@ -152,9 +220,10 @@ int checkWakeReason() {
 // ==================== 唤醒后执行定时任务 ====================
 // 定时器唤醒 = 到了 0 点，执行查询 + 推送（如果该天推送）
 void executeScheduledTasks() {
+    // NTP 已在 initWiFiAndNTP() 中同步，这里直接使用
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 3000)) {
-        Serial.println("[Sleep] NTP not ready, skip scheduled tasks");
+    if (!getCurrentTime(&timeinfo)) {
+        Serial.println("[Sleep] No time available, skip scheduled tasks");
         return;
     }
 
@@ -162,7 +231,7 @@ void executeScheduledTasks() {
     int wday = timeinfo.tm_wday;  // 0=Sun
 
     // 查询任务：每次 0 点唤醒都执行
-        Serial.println("[Sleep] Executing scheduled query...");
+    Serial.println("[Sleep] Executing scheduled query...");
     bool queryResult = queryElectricity();
     if (queryResult) {
         saveQueryCache();  // 查询成功，更新缓存

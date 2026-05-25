@@ -185,7 +185,18 @@ void handleOk() {
                                 wifiConnected = true;
                             }
                         }
-                        if (wifiConnected) {
+                                                if (wifiConnected) {
+                            // ★ WiFi 连上了，顺便同步一下时间
+                            configTime(8 * 3600, 0, "ntp.aliyun.com", "cn.ntp.org.cn", "pool.ntp.org");
+                            {
+                                struct tm ti;
+                                if (getLocalTime(&ti, 3000) && ti.tm_year + 1900 >= 2025) {
+                                    savedUnixTime = mktime(&ti);
+                                    elapsedUs = 0;
+                                    Serial.printf("[RTC] Query sync: %02d:%02d:%02d\n",
+                                        ti.tm_hour, ti.tm_min, ti.tm_sec);
+                                }
+                            }
                             if (queryElectricity()) {
                                 queryOk = true;
                                 saveQueryCache();
@@ -346,14 +357,10 @@ void handleOk() {
             menuCount = 5;
             break;
 
-                case ST_SET_WIFI:
+                                                case ST_SET_WIFI:
             lastActivity = millis();
             startWifiPortal();
-            menuState = ST_SET;
-            menuIndex = 3;
-            menuCount = 5;
-            showCurrentMenu();
-            break;
+            return;  // ★ 直接返回，跳过末尾的 showCurrentMenu()
 
         // ---- 推送子菜单 ----
         case ST_PUSH_FREQ:
