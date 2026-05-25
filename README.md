@@ -13,7 +13,7 @@
 - **Server酱推送** — 查询结果自动推送到微信
 - **Deep Sleep** — 30 秒无操作自动休眠，GPIO3 唤醒键唤醒，休眠电流 ~9μA
 - **Web 配网** — 旋钮选择 WiFi Setup，手机扫码配网
-- **OTA 更新** — 通过 Web 界面上传固件，无需 USB 线
+- **在线更新** — WiFi Setup 内置固件更新，浏览器上传 .bin 即可升级
 - **旋钮菜单** — 旋转选择 + 按下确认，操作简洁
 
 ## 硬件
@@ -115,14 +115,14 @@ ESP32-C3
 
 如果配网失败（如密码错误），设备会自动重启并进入离线模式。重新进入 WiFi Setup 即可再次配网。
 
-### OTA 无线升级
+### 在线固件更新
 
 首次烧录后，后续固件更新无需 USB 线，通过 WiFi 无线升级：
 
 1. 设备需已连接 WiFi
-2. 进入菜单 → Settings → OTA Update
-3. 设备会开启 OTA 服务页面
-4. 浏览器访问设备 IP 地址，上传 `.bin` 固件文件
+2. 进入菜单 → Settings → WiFi Setup
+3. 浏览器访问设备 IP 地址，切换到"固件更新"标签页
+4. 选择 `.bin` 固件文件并上传
 5. 等待上传完成，设备自动重启
 
 ## 菜单操作
@@ -145,8 +145,7 @@ ESP32-C3
 │   ├── Building       — 设置楼栋号（默认46）
 │   ├── Room           — 设置房间号（默认416）
 │   ├── Default        — 恢复默认设置
-│   ├── WiFi Setup     — 配置 WiFi 连接
-│   └── OTA Update     — 固件升级
+│   └── WiFi Setup     — 配置 WiFi + 在线更新
 ├── Query Timer
 │   ├── Enable         — 开启/关闭定时查询
 │   ├── Frequency      — 每日/每周
@@ -170,7 +169,6 @@ esp32_electricity.ino  — 主程序（setup/loop）
 ├── encoder.h          — 旋转编码器 + 按键中断
 ├── display.h          — OLED 绘图辅助 + 屏保
 ├── api.h              — 电费查询 + Server酱推送
-├── ota_manager.h      — OTA 固件更新
 └── menu.h             — 菜单状态机
 ```
 
@@ -211,7 +209,7 @@ A: 检查楼栋号和房间号是否正确（菜单 → Settings → Building/Ro
 
 ### Q: 如何更新固件？
 
-A: 进入菜单 → Settings → OTA Update，通过浏览器上传新的 `.bin` 文件。
+A: 设备连接 WiFi 后，进入菜单 → Settings → WiFi Setup，浏览器访问设备 IP，切换到"固件更新"标签页上传 `.bin` 文件。
 
 ### Q: 休眠后如何唤醒？
 

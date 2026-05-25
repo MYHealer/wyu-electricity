@@ -1,5 +1,5 @@
 /*
- * 五邑大学宿舍电费查询终端 v9.1
+ * 五邑大学宿舍电费查询终端 v9.2
  * ESP32-C3 + SH1106 OLED(128x64 I2C) + 旋钮 + 按钮
  * Deep Sleep 省电：30秒无操作休眠，GPIO3/定时器唤醒
  *
@@ -15,7 +15,7 @@
  *   globals.h      — 全局变量 extern 声明
  *   config_store.h — NVS 配置读写
  *   sleep_manager.h — Deep Sleep 管理
- *   wifi_manager.h — WiFi 连接 + Web 配网
+ *   wifi_manager.h — WiFi 连接 + Web 配网 + 在线更新
  *   encoder.h      — 旋转编码器 + 按钮
  *   display.h      — OLED 绘图辅助 + 屏保
  *   api.h          — 电费查询 + Server酱推送
@@ -38,7 +38,7 @@
 #include "api.h"
 #include "wifi_manager.h"
 #include "sleep_manager.h"
-#include "ota_manager.h"
+
 #include "menu.h"
 
 // ==================== 全局变量定义 ====================
@@ -70,7 +70,7 @@ int screensaverPage = 0;
 
 // ==================== 菜单文本 ====================
 const char* txtMain[]     = {"Query", "Settings", "Push", "About"};
-const char* txtSet[]      = {"Building", "Room", "Default", "WiFi Setup", "OTA Update", "Back"};
+const char* txtSet[]      = {"Building", "Room", "Default", "WiFi Setup", "Back"};
 const char* txtQry[]      = {"Current", "Frequency", "Hour", "Back"};
 const char* txtPush[]     = {"Trigger", "Frequency", "Push Now", "Back"};
 const char* txtPushFreq[] = {"Daily", "Weekly"};
@@ -132,7 +132,7 @@ void setup() {
 
                                 case WAKE_TIMER: {
             // 定时器唤醒：查询/推送，关 WiFi，然后睡
-            Serial.println("v9.1 Timer wake - executing tasks...");
+            Serial.println("v9.2 Timer wake - executing tasks...");
 
             display.clearDisplay();
             display.setTextSize(1);
@@ -159,7 +159,7 @@ void setup() {
 
                                         case WAKE_GPIO: {
             // GPIO 唤醒：先显示缓存，再快速取 NTP 时间
-            Serial.println("v9.1 Button wake - cache + quick NTP");
+            Serial.println("v9.2 Button wake - cache + quick NTP");
 
             loadConfig();
             loadQueryCache();
@@ -177,7 +177,7 @@ void setup() {
 
                                         default: {
             // 上电复位：加载缓存 + 快速取时间
-            Serial.println("v9.1 Fresh boot - cache + quick NTP");
+            Serial.println("v9.2 Fresh boot - cache + quick NTP");
 
             loadConfig();
             loadQueryCache();
@@ -259,18 +259,6 @@ void loop() {
             showCurrentMenu();
         }
         delay(10);
-        return;
-    }
-
-                                // OTA 模式：处理 Web 上传（保持活跃，不进 sleep）
-    if (menuState == ST_SET_OTA) {
-        handleOtaLoop();
-        lastActivity = millis();  // OTA 期间禁止 sleep
-        // 允许返回键退出 OTA
-        if (back) {
-            handleBack();
-        }
-        delay(2);
         return;
     }
 

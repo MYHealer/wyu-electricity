@@ -1,8 +1,7 @@
 // ==================== menu.h ====================
 // 菜单状态机：显示 + 操作逻辑
 // v8.0：删除 Hour 选项，查询/推送统一定在 0 点
-// v9.0：新增 OTA 无线更新
-// v9.1：修复 Push Now 闪退（去掉 goto，加调试日志）
+// v9.2：移除 OTA 菜单项（WiFi Setup 内已有在线更新）
 #ifndef MENU_H
 #define MENU_H
 
@@ -11,7 +10,7 @@
 #include "config_store.h"
 #include "api.h"
 #include "wifi_manager.h"
-#include "ota_manager.h"
+
 
 // 前向声明（定义在 .ino / wifi_manager.h）
 void initWiFiAndNTP();
@@ -39,14 +38,7 @@ void showCurrentMenu() {
             drawScrollMenu(txtSet, menuCount);
             break;
 
-        case ST_SET_OTA:
-            drawTitle("OTA Update");
-            drawStrCenter(22, "AP: ESP32_ELEC");
-            drawStrCenter(34, "PW: 12345678");
-            drawStrCenter(46, "192.168.4.1");
-            break;
-
-        case ST_SET_WIFI:
+                case ST_SET_WIFI:
             drawTitle("WiFi");
             drawStrCenter(22, "Open Portal?");
             drawStrCenter(38, "OK=Yes  Back=No");
@@ -79,7 +71,7 @@ void showCurrentMenu() {
 
         case ST_ABOUT:
             drawTitle("About");
-            drawStrCenter(22, "Elec Terminal v9.1");
+                        drawStrCenter(22, "Elec Terminal v9.2");
             drawStrCenter(34, "ESP32-C3 + SH1106");
             drawStrCenter(46, "WYU HCJ");
             break;
@@ -134,7 +126,7 @@ void handleOk() {
                 case 1:
                     menuState = ST_SET;
                     menuIndex = 0;
-                    menuCount = 6;
+                    menuCount = 5;
                     break;
                 case 2:
                     menuState = ST_PUSH;
@@ -167,21 +159,7 @@ void handleOk() {
                 case 3:
                     menuState = ST_SET_WIFI;
                     break;
-                case 4:
-                    lastActivity = millis();
-                    menuState = ST_SET_OTA;
-                    startOtaServer();
-                    lastActivity = millis();
-                    display.clearDisplay();
-                    display.setTextSize(1);
-                    display.setTextColor(SH110X_WHITE);
-                    drawTitle("OTA Update");
-                    drawStr(10, 20, "AP: ESP32_ELEC");
-                    drawStr(10, 32, "PW: 12345678");
-                    drawStr(10, 46, "192.168.4.1");
-                    display.display();
-                    break;
-                case 5:
+                                case 4:
                     menuState = ST_MAIN;
                     menuIndex = 1;
                     menuCount = 4;
@@ -348,7 +326,7 @@ void handleOk() {
             saveConfig();
             menuState = ST_SET;
             menuIndex = 0;
-            menuCount = 6;
+            menuCount = 5;
             break;
 
         case ST_SET_ROOM:
@@ -356,7 +334,7 @@ void handleOk() {
             saveConfig();
             menuState = ST_SET;
             menuIndex = 1;
-            menuCount = 6;
+            menuCount = 5;
             break;
 
         case ST_SET_DEF:
@@ -365,19 +343,16 @@ void handleOk() {
             saveConfig();
             menuState = ST_SET;
             menuIndex = 2;
-            menuCount = 6;
+            menuCount = 5;
             break;
 
-        case ST_SET_WIFI:
+                case ST_SET_WIFI:
             lastActivity = millis();
             startWifiPortal();
             menuState = ST_SET;
             menuIndex = 3;
-            menuCount = 6;
+            menuCount = 5;
             showCurrentMenu();
-            break;
-
-        case ST_SET_OTA:
             break;
 
         // ---- 推送子菜单 ----
@@ -462,28 +437,22 @@ void handleBack() {
         case ST_SET_BLD:
             menuState = ST_SET;
             menuIndex = 0;
-            menuCount = 6;
+            menuCount = 5;
             break;
         case ST_SET_ROOM:
             menuState = ST_SET;
             menuIndex = 1;
-            menuCount = 6;
+            menuCount = 5;
             break;
         case ST_SET_DEF:
             menuState = ST_SET;
             menuIndex = 2;
-            menuCount = 6;
+            menuCount = 5;
             break;
-        case ST_SET_WIFI:
+                case ST_SET_WIFI:
             menuState = ST_SET;
             menuIndex = 3;
-            menuCount = 6;
-            break;
-        case ST_SET_OTA:
-            otaServer.stop();
-            menuState = ST_SET;
-            menuIndex = 4;
-            menuCount = 6;
+            menuCount = 5;
             break;
         case ST_PUSH_FREQ:
             menuState = ST_PUSH;

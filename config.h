@@ -36,7 +36,7 @@ enum MenuState {
         ST_SET_BLD, ST_SET_ROOM, ST_SET_DEF, ST_SET_WIFI,
                     ST_PUSH_FREQ, ST_PUSH_DAY, ST_PUSH_EN, ST_ABOUT,
                                                 ST_QRY_FREQ, ST_QRY_DAY,
-                                ST_SET_OTA
+                                
 };
 
 // ==================== 配置结构体 ====================

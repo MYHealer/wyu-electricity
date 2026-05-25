@@ -1,5 +1,18 @@
 # 更新日志
 
+## v9.2 (2026-05-25)
+
+### 固件更新整合
+- **移除独立 OTA 菜单项**，固件更新功能合并到 WiFi Setup 的 Web 服务器中
+- 删除 `ota_manager.h`，OTA 逻辑统一由 `wifi_manager.h` 中的 HTTP 上传接口处理
+- 更新流程：进入 WiFi Setup → 浏览器访问设备 IP → 切换到"固件更新"标签页 → 上传 .bin 文件
+- 菜单层级简化：Settings 下从 5 项减为 4 项（Building / Room / Default / WiFi Setup）
+
+### 文档更新
+- README 中 OTA 相关描述同步更新，反映新的固件更新入口
+
+---
+
 ## v9.1 (2026-05-23)
 
 ### Deep Sleep 电流优化
