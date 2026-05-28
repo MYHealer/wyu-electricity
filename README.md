@@ -4,7 +4,7 @@
 
 对应硬件PCB链接：https://oshwhub.com/shealer/project_zlfcvzpv
 
-<img width="1566" height="1090" alt="1779556952944" src="https://github.com/user-attachments/assets/59e3d434-89fa-4d41-88c5-c141b65c072e" />
+<img src="./演示.png" width="60%"><br>
 
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
