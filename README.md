@@ -1,7 +1,8 @@
 # 五邑大学宿舍电费查询终端
 
 基于 ESP32-C3 的宿舍电费查询终端，支持 OLED 显示、旋钮操作、Deep Sleep 省电、Server酱推送。
-对应硬件PCB链接：待补充......
+
+对应硬件PCB链接：https://oshwhub.com/shealer/project_zlfcvzpv
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-ESP32--C3-orange.svg)
